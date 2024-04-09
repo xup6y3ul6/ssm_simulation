@@ -1,0 +1,119 @@
+---
+title: "Simulation Analysis"
+author: "Tzu-Yao Lin"
+date: last-modified
+bibliography: references.bib
+csl: apa.csl
+execute:
+  warning: false
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    self-contained: true
+    code-fold: show
+    code-tools: true
+---
+
+# Simulation procedure
+
+# Simulated data
+
+## Multilevel Measurement Error Vector Autoregressive (1) Model
+
+According to @schuurman2019, the **multilevel MEVAR(1) model** can be written as follows.
+
+-   Level 1 model (within subject)
+    -   Observation equation
+-   Measurement equation
+
+$$
+\begin{pmatrix}y_{1it} \\ y_{2it}\end{pmatrix} = \begin{pmatrix}\mu_{1i} \\ \mu_{2i}\end{pmatrix} + \begin{pmatrix}\theta_{1it} \\ \theta_{2it}\end{pmatrix} + \begin{pmatrix}\epsilon_{1it} \\ \epsilon_{2it}\end{pmatrix}
+$$
+
+$$
+\begin{pmatrix}\epsilon_{1it} \\ \epsilon_{2it}\end{pmatrix} \sim \mathcal{N} \left(\begin{pmatrix}0 \\ 0\end{pmatrix}, \mathbf{\Sigma}_{\epsilon i} = \begin{pmatrix} \sigma^2_{\epsilon 11i} & \sigma_{\epsilon 12i} \\ \sigma_{\epsilon 12i} & \sigma^2_{\epsilon 22i}\end{pmatrix}\right)
+$$
+
+-   State equation (state space model representation)
+
+$$
+\begin{pmatrix}\theta_{1it} \\ \theta_{2it}\end{pmatrix} = \begin{pmatrix} \phi_{11i} & \phi_{12i} \\ \phi_{12i} & \phi_{22i} \end{pmatrix} \begin{pmatrix}\theta_{1it-1} \\ \theta_{2it-1}\end{pmatrix} + \begin{pmatrix}\omega_{1it} \\ \omega_{2it}\end{pmatrix}
+$$
+
+$$
+\begin{pmatrix}\omega_{1it} \\ \omega_{2it}\end{pmatrix} \sim \mathcal{N} \left(\begin{pmatrix}0 \\ 0\end{pmatrix}, \mathbf{\Sigma}_{\omega i}  = \begin{pmatrix} \sigma^2_{\omega 11i} & \sigma_{\omega 12i} \\ \sigma_{\omega 12i} & \sigma^2_{\omega 22i}\end{pmatrix}\right)
+$$
+
+-   Level 2 model (between subject)
+
+$$
+\boldsymbol{\mu}_i = \begin{pmatrix}\mu_{1 i} \\\mu_{2 i} \end{pmatrix} \sim \mathcal{N} \left(\boldsymbol{\gamma}_\mu = \begin{pmatrix} \gamma_{\mu 1} \\\gamma_{\mu 2} \end{pmatrix}, \boldsymbol{\Psi}_\mu =\begin{pmatrix} \psi_{\mu1}^2 & \psi_{\mu12} \\ \psi_{\mu12} & \psi_{\mu2}^2\end{pmatrix}\right)
+$$
+
+$$
+vec(\boldsymbol{\Phi}_i) = \begin{pmatrix} \phi_{11i} \\ \phi_{12i} \\ \phi_{21i} \\ \phi_{22i} \end{pmatrix} \sim \mathcal{N} \left(\boldsymbol{\gamma}_{\Phi} = \begin{pmatrix}\gamma_{\phi 11} \\ \gamma_{\phi 12} \\ \gamma_{\phi 21} \\ \gamma_{\phi 22} \end{pmatrix}, \boldsymbol{\boldsymbol{\Psi}}_{\phi} = \begin{pmatrix} \psi_{\phi11}^2 & \psi_{\phi11\phi12} & \psi_{\phi11\phi21} & \psi_{\phi11\phi22} \\ \psi_{\phi11\phi12} & \psi_{\phi12}^2 & \psi_{\phi12\phi21} & \psi_{\phi12\phi22} \\ \psi_{\phi21\phi11} & \psi_{\phi21\phi12} & \psi_{\phi21}^2 & \psi_{\phi21\phi22} \\ \psi_{\phi11\phi22} & \psi_{\phi22\phi12} & \psi_{\phi22\phi21} & \psi_{\phi22}^2 \end{pmatrix} \right)
+$$
+
+$$
+vec(upp.tri(\mathbf{R}_i)) = \begin{pmatrix}\sigma_{\epsilon_{11 i}}^{2} \\\sigma_{\epsilon_{12 i}} \\\sigma_{\epsilon_{22 i}}^{2}\end{pmatrix} \sim \mathcal{N} \left(\boldsymbol{\gamma}_{\sigma_\epsilon^2} = \begin{pmatrix} \gamma_{\sigma_{\epsilon 11}^{2}} \\\gamma_{\sigma_{\epsilon 12}} \\ \gamma_{\sigma_{\epsilon 22}^{2}} \end{pmatrix}, \boldsymbol{\Psi}_{\boldsymbol{\sigma}_{\epsilon}^{2}} = \begin{pmatrix} \psi_{\sigma_{\epsilon 11}^2} & & 0 \\ & \psi_{\sigma_{\epsilon 12}} & \\ 0 & & \psi_{\sigma_{\epsilon 22}^2}\end{pmatrix}\right)
+$$
+
+\$\$ \sigma*{*\omega{11 i}} \sim logN(\gamma*{*\sigma{\omega 11}}, \psi*{*\sigma{\omega 11}}) \\ \sigma*{*\omega{22 i}} \sim logN(\gamma*{*\sigma{\omega 22}}, \psi*{*\sigma{\omega 22}}) \\ \sigma*{*\omega{12 i}} \sim uniform(-1, 1) \\
+
+```{=tex}
+\begin{pmatrix} \psi_{\sigma_{\epsilon 11}^2} &  \\ & \psi_{\sigma_{\epsilon 12}}  \end{pmatrix}
+```
+\sim LKJ(\eta\_\omega) \$\$
+
+where \$\mathbf{\Sigma}*{*\omega i} = \boldsymbol{\tau}{\omega} \times \times \$
+
+## Reliability
+
+-   **Reliability for systematic between-subject difference**
+
+$$
+R^B = \frac{\psi^2_\mu}{Var(y)} = \frac{\psi^2_\mu}{\psi^2_\mu + E_{i}[\tau_i]+ \gamma_{\sigma_\epsilon^2}} 
+$$
+
+-   **Reliability for within-subject fluctuations**
+
+$$
+R_{i}^W = \frac{\tau_i}{Var(y_{i})} = \frac{\tau_i}{\tau_i + \sigma_{\epsilon i}^2}
+$$ where $\tau_i = \frac{\sigma_{\omega i}^2}{1 - \phi_i^2}$.
+
+## Data generating function and (hyper-)parameter settings
+
+``` r
+#| filename: "data_generation.R"
+
+{{< include data_generation.R >}}
+```
+
+## Show generated data
+
+```{r}
+library(tidyverse)
+
+source("data_generation.R")
+gen_data <- generate_ssm_data(N = 10, nT = 50, seed = 1294)
+
+```
+
+```{r}
+gen_data$y
+
+
+y <- tibble(y = gen_data$y) |> 
+  mutate(Sub = 1:n(), 
+         y1 = map_dbl(y, ~ .x[1, ]), 
+         y2 = map_dbl(y, ~ .x[2, ]))
+  
+
+```
+
+
+# Model fitting by Stan
+
+## Stan codes
