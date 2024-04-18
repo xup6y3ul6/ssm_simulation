@@ -1,10 +1,9 @@
-#include ssm-function.stan
+#include ssm_function.stan
 
 data {
   int<lower=1> N; // number of subjects
-  array[N] int<lower=1> T; // number of observation for each subject
-  int<lower=1> max_T; // maximum number of observation
-  array[N] matrix[2, max_T] y; // observations 
+  int<lower=1> T; // number of observation for each subject
+  array[N] matrix[2, T] y; // observations 
 }
 
 transformed data {
@@ -18,7 +17,7 @@ transformed data {
 parameters {
   array[N] vector[2] mu; // ground mean/trane
   array[N] vector[2] theta_0; // initial latent state
-  array[N] matrix[2, max_T] theta; // latent states
+  array[N] matrix[2, T] theta; // latent states
   array[N] matrix<lower=-1, upper=1>[2, 2] Phi; // autoregressive parameters
   
   
@@ -57,17 +56,17 @@ transformed parameters {
 
 model {
   // level 1 (within subject)
-  array[N] matrix[2, max_T+1] theta_0T;
-  array[N] matrix[2, max_T] mutheta;
-  array[N] matrix[2, max_T+1] Phitheta;
+  array[N] matrix[2, T+1] theta_0T;
+  array[N] matrix[2, T] mutheta;
+  array[N] matrix[2, T+1] Phitheta;
   
   for (n in 1:N) {
     theta_0[n] ~ normal(m_0, diag_C_0);
     theta_0T[n] = append_col(theta_0[n], theta[n]);
-    Phitheta[n, , 1:T[n]] = Phi[n] * theta_0T[n, , 1:T[n]];
-    mutheta[n, , 1:T[n]] = mu[n] * rep_row_vector(1.0, T[n]) + theta[n, , 1:T[n]];
+    Phitheta[n, , 1:T] = Phi[n] * theta_0T[n, , 1:T];
+    mutheta[n, , 1:T] = mu[n] * rep_row_vector(1.0, T) + theta[n, , 1:T];
     
-    for (t in 1:T[n]) {
+    for (t in 1:T) {
       theta[n, , t] ~ multi_normal(Phitheta[n, , t], Q[n]);
       y[n, , t] ~ multi_normal(mutheta[n, , t], R[n]);
     }

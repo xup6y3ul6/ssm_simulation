@@ -81,7 +81,9 @@ $$
 
 $$
 R_{i}^W = \frac{\tau_i}{Var(y_{i})} = \frac{\tau_i}{\tau_i + \sigma_{\epsilon i}^2}
-$$ where $\tau_i = \frac{\sigma_{\omega i}^2}{1 - \phi_i^2}$.
+$$ 
+
+where $\tau_i = \frac{\sigma_{\omega i}^2}{1 - \phi_i^2}$.
 
 ## Data generating function and (hyper-)parameter settings
 
@@ -95,25 +97,179 @@ $$ where $\tau_i = \frac{\sigma_{\omega i}^2}{1 - \phi_i^2}$.
 
 ```{r}
 library(tidyverse)
+theme_set(theme_bw())
 
 source("data_generation.R")
-gen_data <- generate_ssm_data(N = 10, nT = 50, seed = 1294)
 
+
+gen_data <- generate_ssm_data(N = 50, nT = 50, seed = 1297)
+
+saveRDS(gen_data, "sim_data/data_N50T50S1297.rds")
 ```
 
 ```{r}
-gen_data$y
+plot_data <- tibble(y = gen_data$y) |> 
+  mutate(Sub = 1:n(),
+         y1 = map(y, ~ .x[1, ]), 
+         y2 = map(y, ~ .x[2, ])) |> 
+  unnest_longer(y1:y2) |> 
+  pivot_longer(y1:y2, names_to = "Var", values_to = "Value") |> 
+  mutate(Time = 1:n(), .by = c(Sub, Var))
+
+plot_data
+```
 
 
-y <- tibble(y = gen_data$y) |> 
-  mutate(Sub = 1:n(), 
-         y1 = map_dbl(y, ~ .x[1, ]), 
-         y2 = map_dbl(y, ~ .x[2, ]))
-  
+```{r}
+ggplot(plot_data, aes(x = Time, y = Value, color = Var)) + 
+  geom_line() + geom_point() +
+  facet_wrap(Sub ~ .) +
+  coord_cartesian(ylim = c(0, 100))
 
+
+ggplot(plot_data, aes(x = Time, y = Value, group = Sub)) +
+  geom_line() + #geom_point() +
+  facet_wrap(. ~ Var) 
+
+
+```
+
+
+```{r}
+gen_data$rel_B
+
+gen_data$rel_W
+ggplot()
 ```
 
 
 # Model fitting by Stan
 
 ## Stan codes
+
+```cmdstan
+#| filename: "multilevel-univariate-ssm-lkj.stan"
+
+{{< include stan/multilevel-univariate-ssm-lkj.stan >}}
+```
+
+
+
+```
+ for (n in 1:N) {
+    mu[n] ~ multi_normal(gamma_mu, Psi_mu);
+    to_vector(Phi[n]) ~ multi_normal(gamma_Phi, Psi_Phi);
+    
+    // tau_R[n] ~ inv_gamma(alpha_tau_R, beta_tau_R);
+    // tau_Q[n] ~ inv_gamma(alpha_tau_Q, beta_tau_Q);
+    
+    tau_R[n] ~ cauchy(0, 2.5);
+    tau_Q[n] ~ cauchy(0, 2.5);
+    // L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
+    // L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
+    L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
+    L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
+  }
+```
+
+## Fitting
+```{r}
+#| label: load-packages
+
+# library(lubridate)
+# library(tsibble)
+library(cmdstanr)
+register_knitr_engine(override = FALSE)
+library(posterior)
+library(bayesplot)
+color_scheme_set("brewer-Spectral")
+# library(loo)
+
+source("custom_functions.R")
+pos_neg_color <- scales::hue_pal()(2)
+```
+
+```{r}
+#| label: fit-model
+#| eval: false
+
+mssm <- cmdstan_model("stan/multilevel_multivariate_ssm_s2019.stan", 
+                      )
+
+mssm_data <- lst(N = 10,
+                 `T` = 25,
+                 # P = 2,
+                 y = gen_data$y)
+
+
+mssm_fit <- mssm$sample(data = mssm_data, 
+                        chains = 6, 
+                        parallel_chains = 6, 
+                        iter_warmup = 4000, 
+                        iter_sampling = 4000, 
+                        seed = 1294, 
+                        refresh = 2000, 
+                        show_messages = TRUE, 
+                        output_dir = "stan/results/s2019_fully")
+```
+All 6 chains finished successfully.
+Mean chain execution time: 8547.3 seconds.
+Total execution time: 9350.1 seconds.
+
+
+```{r}
+source("custom_functions.R")
+
+
+# mssm_fit2 <- mssm$sample(data = mssm_data, 
+#                      chains = 6,
+#                      parallel_chains = 6,
+#                      iter_warmup = 0,
+#                      iter_sampling = 4000,
+#                      adapt_engaged = FALSE,
+#                      inv_metric = mssm_fit$inv_metric(matrix = FALSE),
+#                      step_size = mssm_fit$metadata()$step_size_adaptation,
+#                      init = createStanInitsPreviousRun(mssm_fit),
+#                      seed = 1295,
+#                      refresh = 2000, 
+#                      show_messages = TRUE,
+#                      save_warmup = TRUE,
+#                      output_dir = "stan/results/lkj_partial")
+```
+
+
+## Check the convergence
+
+```{r}
+mssm_sum <- mssm_fit$summary()
+View(mssm_sum)
+```
+
+```{r}
+mssm_fit$profiles()
+```
+
+```{r}
+mssm_fit$draws(variables = "mu", format = "df") %>% 
+  select(1:12, .chain, .iteration, .draw) %>% 
+  mcmc_trace()
+mssm_fit$draws(variables = "Phi", format = "df") %>% 
+  select(1:12, .chain, .iteration, .draw) %>% 
+  mcmc_trace()
+mssm_fit$draws(variables = "Phi", format = "df") %>% 
+  select(13:24, .chain, .iteration, .draw) %>% 
+  mcmc_trace()
+# mssm_fit$draws(variables = "sigma_omega", format = "df") %>% 
+#   mcmc_trace()
+# mssm_fit$draws(variables = "sigma_epsilon", format = "df") %>% 
+#   mcmc_trace()
+```
+
+
+
+## Results
+
+```{r}
+
+```
+

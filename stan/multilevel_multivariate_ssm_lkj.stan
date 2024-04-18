@@ -1,11 +1,10 @@
-#include ssm-function.stan
+#include ssm_function.stan
 
 data {
   int<lower=1> N; // number of subjects
-  array[N] int<lower=1> T; // number of observation for each subject
-  int<lower=1> max_T; // maximum number of observation
+  int<lower=1> T; // number of observation for each subject
   int<lower=1> P; // number of affects
-  array[N] matrix[P, max_T] y; // observations 
+  array[N] matrix[P, T] y; // observations 
 }
 
 transformed data {
@@ -21,11 +20,9 @@ transformed data {
 parameters {
   array[N] vector[P] mu; // ground mean/trane
   array[N] vector[P] theta_0; // initial latent state
-  array[N] matrix[P, max_T] theta; // latent states
+  array[N] matrix[P, T] theta; // latent states
   array[N] matrix[P, P] Phi; // autoregressive parameters
   
-  //array[N] matrix[P, max_T] epsilon;
-  //array[N] matrix[P, max_T] omega;
   array[N] cholesky_factor_corr[P] L_Omega_R; 
   array[N] cholesky_factor_corr[P] L_Omega_Q;
   array[N] vector<lower=0>[P] tau_R;
@@ -36,69 +33,87 @@ parameters {
   vector[P * P] gamma_Phi; // prior mean of the autoregressive parameters
   cov_matrix[P * P] Psi_Phi; // prior covariance of the autoregressive parameters
   
+  // vector<lower=0>[P] alpha_tau_R; // prior shape of the inverse gamma prior for the residual variance
+  // vector<lower=0>[P] beta_tau_R; // prior scale of the inverse gamma prior for the residual variance
+  // vector<lower=0>[P] alpha_tau_Q; // prior shape of the inverse gamma prior for the latent state variance
+  // vector<lower=0>[P] beta_tau_Q; // prior scale of the inverse gamma prior for the latent state variance
+  real<lower=0> eta_R; // prior shape of the LKJ prior for the correlation matrix of the residuals
+  real<lower=0> eta_Q; // prior shape of the LKJ prior for the correlation matrix of the latent states
+  
 }
 
 transformed parameters {
-  // array[N] cov_matrix[P] R; // covariance of the measurment error
-  // array[N] cov_matrix[P] Q; // covariance of the innovation noise
-  // for (n in 1:N) {
-  //   R[n] = diag_pre_multiply(tau_R[n], L_Omega_R[n]) * diag_pre_multiply(tau_R[n], L_Omega_R[n])';
-  //   Q[n] = diag_pre_multiply(tau_Q[n], L_Omega_Q[n]) * diag_pre_multiply(tau_Q[n], L_Omega_Q[n])';
-  // }
-  
   array[N] matrix[P, P] L_Sigma_R;
   array[N] matrix[P, P] L_Sigma_Q;
+  // array[N] cov_matrix[P] R;
+  // array[N] cov_matrix[P] Q;
+  // vector[P] mu_R;
    
   for (n in 1:N) {
     L_Sigma_R[n] = diag_pre_multiply(tau_R[n], L_Omega_R[n]);
+    // R[n] = L_Sigma_R[n] * L_Sigma_R[n]';
+    
     L_Sigma_Q[n] = diag_pre_multiply(tau_Q[n], L_Omega_Q[n]);
+    // Q[n] = L_Sigma_Q[n] * L_Sigma_Q[n]';
   }
+  
+  // for (p in 1:P) {
+  //   mu_R[p] = beta_tau_R[p] / (alpha_tau_R[p] - 1);
+  // }
 }
 
 model {
   // level 1 (within subject)
-  array[N] matrix[P, max_T+1] theta_0T;
-  array[N] matrix[P, max_T] mutheta;
-  array[N] matrix[P, max_T+1] Phitheta;
+  //array[N] matrix[P, T+1] theta_0T;
+  array[N] matrix[P, T] mutheta;
+  //array[N] matrix[P, T+1] Phitheta;
   
   for (n in 1:N) {
-    theta_0[n] ~ normal(m_0, diag_C_0);
-    theta_0T[n] = append_col(theta_0[n], theta[n]);
-    Phitheta[n, , 1:T[n]] = Phi[n] * theta_0T[n, , 1:T[n]];
-    mutheta[n, , 1:T[n]] = mu[n] * rep_row_vector(1.0, T[n]) + theta[n, , 1:T[n]];
-    
-    for (t in 1:T[n]) {
-      theta[n, , t] ~ multi_normal_cholesky(Phitheta[n, , t], L_Sigma_Q[n]);
-      y[n, , t] ~ multi_normal_cholesky(mutheta[n, , t], L_Sigma_R[n]);
+      theta_0[n] ~ normal(m_0, diag_C_0);
+      theta[n, , 1] ~ multi_normal_cholesky(Phi[n] * theta_0[n], L_Sigma_Q[n]);
+      
+      for (t in 2:T) {
+        theta[n, , t] ~ multi_normal_cholesky(Phi[n] * theta[n, , t-1], L_Sigma_Q[n]);
+      }
+      
+      mutheta[n, , 1:T] = mu[n] * rep_row_vector(1.0, T) + theta[n, , 1:T];
+      
+      for (t in 1:T) {
+        y[n, , t] ~ multi_normal_cholesky(mutheta[n, , t], L_Sigma_R[n]);
+      }
     }
-  }
   
   // level 2 (between subject)
   for (n in 1:N) {
     mu[n] ~ multi_normal(gamma_mu, Psi_mu);
     to_vector(Phi[n]) ~ multi_normal(gamma_Phi, Psi_Phi);
-
+    
+    // tau_R[n] ~ inv_gamma(alpha_tau_R, beta_tau_R);
+    // tau_Q[n] ~ inv_gamma(alpha_tau_Q, beta_tau_Q);
+    
     tau_R[n] ~ cauchy(0, 2.5);
     tau_Q[n] ~ cauchy(0, 2.5);
-    L_Omega_R[n] ~ lkj_corr_cholesky(2);
-    L_Omega_Q[n] ~ lkj_corr_cholesky(2);
+    // L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
+    // L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
+    L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
+    L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
   }
   
   // the (hyper)priors of parameters are set as the Stan default values
 }
 
 generated quantities {
-  // array[N] matrix[P, max_T] y_hat;
-  // array[N] matrix[P, P] Tau; 
+  // array[N] matrix[P, T] y_hat;
+  // array[N] matrix[P, P] Tau;
   // array[N] vector[P] rel_W;
   // vector[P] rel_B;
   // 
   // for (n in 1:N) {
-  //   // prediction 
-  //   for (t in 1:T[n]) {
+  //   // prediction
+  //   for (t in 1:T) {
   //     y_hat[n][, t] = mu[n] + theta[n][, t];
   //   }
-  //   
+  // 
   //   // within-subject reliability
   //   Tau[n] = to_matrix((identity_matrix(P * P) - kronecker_prod(Phi[n], Phi[n])) \ to_vector(Q[n]), P, P);
   // 
