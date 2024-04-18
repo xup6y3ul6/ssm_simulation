@@ -36,4 +36,5 @@ vignettes/*.pdf
 *.knit.md
 
 # others
+sim_data/
 stan/results/

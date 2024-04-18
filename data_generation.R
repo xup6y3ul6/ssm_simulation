@@ -25,10 +25,10 @@ generate_ssm_data <- function(N, nT, seed = NULL, init = NULL) {
   C0 <- diag(c(10, 10))
   
   gamma_mu <- c(50, 20)
-  Psi_mu <- diag(c(100, 100))
+  Psi_mu <- diag(c(500, 500))
   
-  gamma_Phi <- c(0.5, 0.2, -0.3, 0)
-  Psi_Phi <- diag(c(0.15, 0.1, 0.1, 0.2))
+  gamma_Phi <- c(0.5, 0.2, -0.3, -0.3)
+  Psi_Phi <- diag(c(0.1, 0.05, 0.05, 0.1))
    
   gamma_tau_epsilon <- c(1.2, 1.1)
   diag_Psi_tau_epsilon <- c(1, 0.8)
