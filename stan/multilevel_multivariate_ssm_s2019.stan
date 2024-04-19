@@ -87,27 +87,30 @@ model {
 }
 
 generated quantities {
-  // array[N] matrix[P, max_T] y_hat;
-  // array[N] matrix[P, P] Tau; 
-  // array[N] vector[P] rel_W;
-  // vector[P] rel_B;
-  // 
-  // for (n in 1:N) {
-  //   // prediction 
-  //   for (t in 1:T[n]) {
-  //     y_hat[n][, t] = mu[n] + theta[n][, t];
-  //   }
-  //   
-  //   // within-subject reliability
-  //   Tau[n] = to_matrix((identity_matrix(P * P) - kronecker_prod(Phi[n], Phi[n])) \ to_vector(Q[n]), P, P);
-  // 
-  //   for (p in 1:P) {
-  //     rel_W[n, p] = Tau[n, p, p] / (Tau[n, p, p] + R[n, p, p]);
-  //   }
-  // }
-  // 
-  // // between-subject reliability
-  // for (p in 1:P) {
-  //   rel_B[p] = Psi_mu[p, p] / (Psi_mu[p, p] + mean(Tau[, p, p]) + mu_R[p]);
-  // }
+  array[N] matrix[2, T] y_hat;
+  array[N] matrix[2, 2] Tau;
+  array[N] vector[2] rel_W;
+  vector[2] mu_R;
+  vector[2] rel_B;
+
+  for (n in 1:N) {
+    // prediction
+    for (t in 1:T) {
+      y_hat[n][, t] = mu[n] + theta[n][, t];
+    }
+
+    // within-subject reliability
+    Tau[n] = to_matrix((identity_matrix(2 * 2) - kronecker_prod(Phi[n], Phi[n])) \ to_vector(Q[n]), 2, 2);
+
+    for (p in 1:2) {
+      rel_W[n, p] = Tau[n, p, p] / (Tau[n, p, p] + R[n, p, p]);
+      
+    }
+  }
+
+  // between-subject reliability
+  for (p in 1:2) {
+    mu_R[p] = mean(R[, p, p]);
+    rel_B[p] = Psi_mu[p, p] / (Psi_mu[p, p] + mean(Tau[, p, p]) + mu_R[p]);
+  }
 }
