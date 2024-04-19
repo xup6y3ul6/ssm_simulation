@@ -77,10 +77,8 @@ generate_ssm_data <- function(N, nT, seed = NULL, init = NULL) {
     rel_W[[n]] <- diag(Tau[[n]]) / diag(Tau[[n]] + Sigma_epsilon[[n]])
   }
   mean_Tau <- Reduce("+", Tau) / length(Tau)
-  mean_Sigma2_epsilon <- c(
-    mean(rlnorm(10^7, gamma_tau_epsilon[1], diag_Psi_tau_epsilon[1])^2,),
-    mean(rlnorm(10^7, gamma_tau_epsilon[2], diag_Psi_tau_epsilon[2])^2)
-  )
+  mean_Sigma2_epsilon <- exp(gamma_tau_epsilon * 2 + diag_Psi_tau_epsilon[1] * 4 / 2)
+
   rel_B <- diag(Psi_mu) / (diag(Psi_mu) + diag(mean_Tau) + mean_Sigma2_epsilon)
   
   # return
