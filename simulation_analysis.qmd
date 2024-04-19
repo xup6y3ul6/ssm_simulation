@@ -16,7 +16,6 @@ format:
     code-tools: true
 ---
 
-# Simulation procedure
 
 # Simulated data
 
@@ -57,33 +56,45 @@ vec(\boldsymbol{\Phi}_i) = \begin{pmatrix} \phi_{11i} \\ \phi_{12i} \\ \phi_{21i
 $$
 
 $$
-vec(upp.tri(\mathbf{R}_i)) = \begin{pmatrix}\sigma_{\epsilon_{11 i}}^{2} \\\sigma_{\epsilon_{12 i}} \\\sigma_{\epsilon_{22 i}}^{2}\end{pmatrix} \sim \mathcal{N} \left(\boldsymbol{\gamma}_{\sigma_\epsilon^2} = \begin{pmatrix} \gamma_{\sigma_{\epsilon 11}^{2}} \\\gamma_{\sigma_{\epsilon 12}} \\ \gamma_{\sigma_{\epsilon 22}^{2}} \end{pmatrix}, \boldsymbol{\Psi}_{\boldsymbol{\sigma}_{\epsilon}^{2}} = \begin{pmatrix} \psi_{\sigma_{\epsilon 11}^2} & & 0 \\ & \psi_{\sigma_{\epsilon 12}} & \\ 0 & & \psi_{\sigma_{\epsilon 22}^2}\end{pmatrix}\right)
+\begin{align*}
+\mathbf{\Sigma}_{\epsilon i}  &= \begin{pmatrix} \sigma^2_{\epsilon 11i} & \sigma_{\epsilon 12i} \\ \sigma_{\epsilon 12i} & \sigma^2_{\epsilon 22i}\end{pmatrix} = \begin{pmatrix}\tau_{\epsilon 1i} \\ \tau_{\epsilon 2i} \end{pmatrix} \begin{pmatrix} 1 & \psi_{\sigma_{\epsilon 12i}} \\ \psi_{\sigma_{\epsilon 12i}} & 1\end{pmatrix}  \begin{pmatrix}\tau_{\epsilon 1i} \\ \tau_{\epsilon 2i} \end{pmatrix}^\top = \boldsymbol{\tau}_{\epsilon i} \mathbf{C}_{\epsilon i} \boldsymbol{\tau}_{\epsilon i}^\top \\
+
+\boldsymbol{\tau}_{\epsilon i} &\sim logNormal\left(\boldsymbol{\gamma_{\epsilon}} = \begin{pmatrix}\gamma_{\epsilon 1} \\ \gamma_{\epsilon 2}\end{pmatrix}, \boldsymbol{\Phi_\epsilon} = \begin{pmatrix} \psi_{\epsilon 1}^2 & 0 \\ 0 & \psi_{\epsilon 2}^2\end{pmatrix}\right) \\
+\mathbf{C}_{\epsilon i} &\sim LKJ(\eta_\epsilon) 
+\end{align*}
 $$
 
-\$\$ \sigma*{*\omega{11 i}} \sim logN(\gamma*{*\sigma{\omega 11}}, \psi*{*\sigma{\omega 11}}) \\ \sigma*{*\omega{22 i}} \sim logN(\gamma*{*\sigma{\omega 22}}, \psi*{*\sigma{\omega 22}}) \\ \sigma*{*\omega{12 i}} \sim uniform(-1, 1) \\
+$$
+\begin{align*}
+\mathbf{\Sigma}_{\omega i}  &= \begin{pmatrix} \sigma^2_{\omega 11i} & \sigma_{\omega 12i} \\ \sigma_{\omega 12i} & \sigma^2_{\omega 22i}\end{pmatrix} = \begin{pmatrix}\tau_{\omega 1i} \\ \tau_{\omega 2i} \end{pmatrix} \begin{pmatrix} 1 & \psi_{\sigma_{\epsilon 12i}} \\ \psi_{\sigma_{\epsilon 12i}} & 1\end{pmatrix}  \begin{pmatrix}\tau_{\omega 1i} \\ \tau_{\omega 2i} \end{pmatrix}^\top = \boldsymbol{\tau}_{\omega i} \mathbf{C}_{\omega i} \boldsymbol{\tau}_{\omega i}^\top \\
 
-```{=tex}
-\begin{pmatrix} \psi_{\sigma_{\epsilon 11}^2} &  \\ & \psi_{\sigma_{\epsilon 12}}  \end{pmatrix}
-```
-\sim LKJ(\eta\_\omega) \$\$
+\boldsymbol{\tau}_{\omega i} &\sim logNormal\left(\boldsymbol{\gamma_{\omega}} = \begin{pmatrix}\gamma_{\omega 1} \\ \gamma_{\omega 2}\end{pmatrix}, \boldsymbol{\Phi_\omega} = \begin{pmatrix} \psi_{\omega 1}^2 & 0 \\ 0 & \psi_{\omega 2}^2\end{pmatrix}\right) \\
+\mathbf{C}_{\omega i} &\sim LKJ(\eta_\omega) 
+\end{align*}
+$$
 
-where \$\mathbf{\Sigma}*{*\omega i} = \boldsymbol{\tau}{\omega} \times \times \$
+
+
 
 ## Reliability
 
 -   **Reliability for systematic between-subject difference**
 
 $$
-R^B = \frac{\psi^2_\mu}{Var(y)} = \frac{\psi^2_\mu}{\psi^2_\mu + E_{i}[\tau_i]+ \gamma_{\sigma_\epsilon^2}} 
+R^B_p = \frac{\psi^2_{\mu p}}{Var(y_p)} = \frac{\psi^2_{\mu p}}{\psi^2_{\mu p} + E_{i}[\tau_{p i}]+ E[\sigma_{\epsilon pp i}^2]} 
 $$
+
+where $p = 1, 2$. Since $\tau_{\epsilon pi} \sim logNotmal(\tau_{\epsilon p}, \psi_{\epsilon p}^2)$, 
+$\sigma_{\epsilon ppi}^2 = \tau_{\epsilon pi}^2 \sim \sim logNotmal(2\tau_{\epsilon p}, 4\psi_{\epsilon p}^2)$. Therefore, $E[\sigma_{\epsilon pp i}^2] = e^{2\tau_{\epsilon p} + 4\psi_{\epsilon p}^2 / 2}$
 
 -   **Reliability for within-subject fluctuations**
 
 $$
-R_{i}^W = \frac{\tau_i}{Var(y_{i})} = \frac{\tau_i}{\tau_i + \sigma_{\epsilon i}^2}
+R_{pi}^W = \frac{\tau_{pi}}{Var(y_{i})} = \frac{\tau_{pi}}{\tau_{pi} + \sigma_{\epsilon ppi}^2}
 $$ 
 
 where $\tau_i = \frac{\sigma_{\omega i}^2}{1 - \phi_i^2}$.
+
 
 ## Data generating function and (hyper-)parameter settings
 
@@ -93,53 +104,89 @@ where $\tau_i = \frac{\sigma_{\omega i}^2}{1 - \phi_i^2}$.
 {{< include data_generation.R >}}
 ```
 
-## Show generated data
+## Snoop the generated data
 
 ```{r}
+#| label: load-package-and-generate-data
+
 library(tidyverse)
 theme_set(theme_bw())
 
 source("data_generation.R")
-
-
-gen_data <- generate_ssm_data(N = 50, nT = 50, seed = 1297)
-
-saveRDS(gen_data, "sim_data/data_N50T50S1297.rds")
+gen_data2 <- generate_ssm_data(N = 25, nT = 50, seed = 1294)
+saveRDS(gen_data, "sim_data/data_N25T50S1294.rds")
 ```
 
+
 ```{r}
+gen_data$Phi[[21]]
+```
+
+
+```{r}
+#| label: fig-ts-plot
+#| fig-cap: "The time plot of observed scores for each subject"
+
 plot_data <- tibble(y = gen_data$y) |> 
-  mutate(Sub = 1:n(),
+  mutate(Sub = factor(1:n()),
          y1 = map(y, ~ .x[1, ]), 
          y2 = map(y, ~ .x[2, ])) |> 
   unnest_longer(y1:y2) |> 
   pivot_longer(y1:y2, names_to = "Var", values_to = "Value") |> 
   mutate(Time = 1:n(), .by = c(Sub, Var))
 
-plot_data
-```
-
-
-```{r}
-ggplot(plot_data, aes(x = Time, y = Value, color = Var)) + 
+plot_data |> 
+  # filter(Sub %in% 1:12) |> 
+  ggplot(aes(x = Time, y = Value, color = Var)) + 
   geom_line() + geom_point() +
-  facet_wrap(Sub ~ .) +
-  coord_cartesian(ylim = c(0, 100))
-
-
-ggplot(plot_data, aes(x = Time, y = Value, group = Sub)) +
-  geom_line() + #geom_point() +
-  facet_wrap(. ~ Var) 
-
-
+  facet_wrap(Sub ~ ., scales = "free_y", nrow = 5)
 ```
 
 
 ```{r}
-gen_data$rel_B
+#| label: fig-ts-plot-all
+#| fig-cap: "The time plot of observed scores for all subjects together"
 
-gen_data$rel_W
-ggplot()
+plot_data |> 
+  ggplot(aes(x = Time, y = Value, group = Sub, color = Sub)) +
+  geom_line() + #geom_point() +
+  facet_grid(. ~ Var) 
+```
+
+## Reliability
+
+Between-level reliability
+
+$$
+
+$$
+
+```{r}
+#| label: rel-B
+
+gen_data$rel_B
+```
+
+Within -level reliability
+
+$$
+
+$$
+
+```{r}
+#| label: fig-rel-W
+#| fig-cap: "The distribution of within-subject reliability"
+
+plot_rel_W <- tibble(rel_W = gen_data$rel_W) |> 
+  mutate(Sub = factor(1:n()),
+         rel_W_y1 = map_dbl(rel_W, ~ .x[1]), 
+         rel_W_y2 = map_dbl(rel_W, ~ .x[2]), .keep = "none") |> 
+  pivot_longer(rel_W_y1:rel_W_y2, names_to = "Var", values_to = "Value")
+
+plot_rel_W |> 
+  ggplot(aes(x = Value, color = Var, fill = Var)) +
+  geom_histogram() +
+  facet_grid(. ~ Var)
 ```
 
 
@@ -154,8 +201,167 @@ ggplot()
 ```
 
 
+## Fitting the model
+
+```{r}
+#| label: load-packages-and-source-cunstom-function
+
+library(cmdstanr)
+register_knitr_engine(override = FALSE)
+library(posterior)
+library(bayesplot)
+color_scheme_set("brewer-Spectral")
+
+source("custom_functions.R")
+pos_neg_color <- scales::hue_pal()(2)
+```
+
+```{r}
+#| label: fit-model
+#| eval: false
+
+lkj <- cmdstan_model("stan/multilevel_multivariate_ssm_lkj.stan")
+
+mssm_data <- lst(N = gen_data$N,
+                 `T` = gen_data$nT,
+                 y = gen_data$y)
+
+output_dir <- "stan/results/lkj-fully_w4s4_s1294"
+dir.create(output_dir)
+
+lkj_fit <- lkj$sample(data = mssm_data, 
+                        chains = 6, 
+                        parallel_chains = 6, 
+                        iter_warmup = 4000, 
+                        iter_sampling = 4000, 
+                        seed = 1294, 
+                        refresh = 2000, 
+                        show_messages = TRUE, 
+                        output_dir = output_dir)
+```
+
+All 6 chains finished successfully.
+Mean chain execution time: 2044.2 seconds.
+Total execution time: 2764.5 seconds.
+
+Warning: 5099 of 24000 (21.0%) transitions ended with a divergence.
+See https://mc-stan.org/misc/warnings for details.
+
+Warning: 1241 of 24000 (5.0%) transitions hit the maximum treedepth limit of 10.
+See https://mc-stan.org/misc/warnings for details.
+
+Warning: 1 of 6 chains had an E-BFMI less than 0.2.
+See https://mc-stan.org/misc/warnings for details.
+
+
+## Check the convergence
+
+```{r}
+mssm_fit <- as_cmdstan_fit(list.files(output_dir, full.names = TRUE))
+mssm_sum <- mssm_fit$summary()
+View(mssm_sum)
+```
+
+
+```{r}
+mssm_fit$draws(variables = "mu", format = "df") %>% 
+  select(1:12, .chain, .iteration, .draw) %>% 
+  mcmc_trace()
+mssm_fit$draws(variables = "Phi", format = "df") %>% 
+  select(1:12, .chain, .iteration, .draw) %>% 
+  mcmc_trace()
+mssm_fit$draws(variables = "Phi", format = "df") %>% 
+  select(13:24, .chain, .iteration, .draw) %>% 
+  mcmc_trace()
+mssm_fit$draws(variables = "rel_W", format = "df") %>% 
+  select(1:12, .chain, .iteration, .draw) %>% 
+  mcmc_trace()
+mssm_fit$draws(variables = "rel_B", format = "df") %>% 
+  mcmc_trace()
+
+
+# mssm_fit$draws(variables = "sigma_omega", format = "df") %>% 
+#   mcmc_trace()
+# mssm_fit$draws(variables = "sigma_epsilon", format = "df") %>% 
+#   mcmc_trace()
+```
+
+
+
+## Results
+
+Plot
+
+```{r}
+color_scheme_set("red")
+
+ppc_intervals(y = gen_data$mu |> list_transpose() |> list_c(),
+              yrep = mssm_fit$draws(variables = "mu", format = "draws_matrix"))
+```   
+
+```{r}
+ppc_intervals(y = gen_data$Phi |> list_transpose() |> list_c(),
+              yrep = mssm_fit$draws(variables = "Phi", format = "draws_matrix"))
 
 ```
+
+
+```{r}
+ppc_intervalsy = gen_data$rel_W |> list_transpose() |> list_c(),
+              yrep = mssm_fit$draws(variables = "rel_W", format = "draws_matrix"))
+
+```
+
+```{r}
+ppc_intervals(y = gen_data$rel_B,
+              yrep = mssm_fit$draws(variables = "rel_B", format = "draws_matrix"))
+gen_data$rel_B
+```
+
+BIAS
+
+```{r}
+overall_bias <- function(true_value, mcmc_draws, estimate = c("mean", "median")) {
+  estimate <- match.arg(estimate)
+  
+  if (estimate == "mean") {
+    mean_draws <- colMeans(mcmc_draws)
+  } else if (estimate == "median") {
+    mean_draws <- apply(mcmc_draws, 2, median)
+  }
+  
+  mean(mean_draws - true_value)
+}
+
+overall_bias(gen_data$rel_W |> list_c(),
+             mssm_fit$draws(variables = "rel_W", format = "draws_matrix"))
+
+
+y = gen_data$rel_W |> list_c()
+y              
+mssm_fit$draws(variables = "rel_W", format = "draws_matrix")
+
+```
+
+
+RMSE
+
+Coverage
+
+
+
+
+# Simulation procedure
+
+Giva a 
+
+## Differents models
+
+```{cmdstan}
+
+```
+
+```{cmdstan}
  for (n in 1:N) {
     mu[n] ~ multi_normal(gamma_mu, Psi_mu);
     to_vector(Phi[n]) ~ multi_normal(gamma_Phi, Psi_Phi);
@@ -172,35 +378,19 @@ ggplot()
   }
 ```
 
-## Fitting
-```{r}
-#| label: load-packages
 
-# library(lubridate)
-# library(tsibble)
-library(cmdstanr)
-register_knitr_engine(override = FALSE)
-library(posterior)
-library(bayesplot)
-color_scheme_set("brewer-Spectral")
-# library(loo)
+## Overall results
 
-source("custom_functions.R")
-pos_neg_color <- scales::hue_pal()(2)
-```
 
 ```{r}
-#| label: fit-model
-#| eval: false
+mssm <- cmdstan_model("stan/multilevel_multivariate_ssm_lkj.stan")
 
-mssm <- cmdstan_model("stan/multilevel_multivariate_ssm_s2019.stan", 
-                      )
-
-mssm_data <- lst(N = 10,
-                 `T` = 25,
-                 # P = 2,
+mssm_data <- lst(N = gen_data$N,
+                 `T` = gen_data$nT,
                  y = gen_data$y)
 
+output_dir <- "stan/results/s2019-fully_w4s4_s1294"
+dir.create(output_dir)
 
 mssm_fit <- mssm$sample(data = mssm_data, 
                         chains = 6, 
@@ -210,66 +400,6 @@ mssm_fit <- mssm$sample(data = mssm_data,
                         seed = 1294, 
                         refresh = 2000, 
                         show_messages = TRUE, 
-                        output_dir = "stan/results/s2019_fully")
-```
-All 6 chains finished successfully.
-Mean chain execution time: 8547.3 seconds.
-Total execution time: 9350.1 seconds.
-
-
-```{r}
-source("custom_functions.R")
-
-
-# mssm_fit2 <- mssm$sample(data = mssm_data, 
-#                      chains = 6,
-#                      parallel_chains = 6,
-#                      iter_warmup = 0,
-#                      iter_sampling = 4000,
-#                      adapt_engaged = FALSE,
-#                      inv_metric = mssm_fit$inv_metric(matrix = FALSE),
-#                      step_size = mssm_fit$metadata()$step_size_adaptation,
-#                      init = createStanInitsPreviousRun(mssm_fit),
-#                      seed = 1295,
-#                      refresh = 2000, 
-#                      show_messages = TRUE,
-#                      save_warmup = TRUE,
-#                      output_dir = "stan/results/lkj_partial")
-```
-
-
-## Check the convergence
-
-```{r}
-mssm_sum <- mssm_fit$summary()
-View(mssm_sum)
-```
-
-```{r}
-mssm_fit$profiles()
-```
-
-```{r}
-mssm_fit$draws(variables = "mu", format = "df") %>% 
-  select(1:12, .chain, .iteration, .draw) %>% 
-  mcmc_trace()
-mssm_fit$draws(variables = "Phi", format = "df") %>% 
-  select(1:12, .chain, .iteration, .draw) %>% 
-  mcmc_trace()
-mssm_fit$draws(variables = "Phi", format = "df") %>% 
-  select(13:24, .chain, .iteration, .draw) %>% 
-  mcmc_trace()
-# mssm_fit$draws(variables = "sigma_omega", format = "df") %>% 
-#   mcmc_trace()
-# mssm_fit$draws(variables = "sigma_epsilon", format = "df") %>% 
-#   mcmc_trace()
-```
-
-
-
-## Results
-
-```{r}
-
+                        output_dir = output_dir)
 ```
 
