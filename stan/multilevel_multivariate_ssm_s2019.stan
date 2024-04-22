@@ -76,7 +76,8 @@ model {
   for (n in 1:N) {
     mu[n] ~ multi_normal(gamma_mu, Psi_mu);
     to_vector(Phi[n]) ~ multi_normal(gamma_Phi, Psi_Phi);
-    log(ervar[n]) ~ normal(gamma_log_ervar, psi_log_ervar);
+    //log(ervar[n]) ~ normal(gamma_log_ervar, psi_log_ervar);
+    ervar[n] ~ lognormal(gamma_log_ervar, psi_log_ervar);
   }
   
   epsilon ~ normal(0, sigma_epsilon);
@@ -110,7 +111,7 @@ generated quantities {
 
   // between-subject reliability
   for (p in 1:2) {
-    mu_R[p] = mean(R[, p, p]);
+    mu_R[p] = exp(gamma_log_ervar[p] + 0.5 * psi_log_ervar[p]^2);
     rel_B[p] = Psi_mu[p, p] / (Psi_mu[p, p] + mean(Tau[, p, p]) + mu_R[p]);
   }
 }
