@@ -113,7 +113,7 @@ library(tidyverse)
 theme_set(theme_bw())
 
 source("data_generation.R")
-gen_data2 <- generate_ssm_data(N = 25, nT = 50, seed = 1294)
+gen_data <- generate_ssm_data(N = 25, nT = 50, seed = 1294)
 saveRDS(gen_data, "sim_data/data_N25T50S1294.rds")
 ```
 
@@ -201,7 +201,7 @@ plot_rel_W |>
 ```
 
 
-## Fitting the model
+### Fitting the model
 
 ```{r}
 #| label: load-packages-and-source-cunstom-function
@@ -240,21 +240,26 @@ lkj_fit <- lkj$sample(data = mssm_data,
                         output_dir = output_dir)
 ```
 
+
 All 6 chains finished successfully.
-Mean chain execution time: 2044.2 seconds.
-Total execution time: 2764.5 seconds.
+Mean chain execution time: 31776.6 seconds.
+Total execution time: 31967.9 seconds.
 
-Warning: 5099 of 24000 (21.0%) transitions ended with a divergence.
-See https://mc-stan.org/misc/warnings for details.
-
-Warning: 1241 of 24000 (5.0%) transitions hit the maximum treedepth limit of 10.
-See https://mc-stan.org/misc/warnings for details.
-
-Warning: 1 of 6 chains had an E-BFMI less than 0.2.
+Warning: 24000 of 24000 (100.0%) transitions hit the maximum treedepth limit of 10.
 See https://mc-stan.org/misc/warnings for details.
 
 
-## Check the convergence
+
+```{r}
+lkj_fit <- as_cmdstan_fit(list.files(output_dir, full.names = TRUE))
+lkj_sum <- lkj_fit$summary()
+View(lkj_sum)
+```
+
+
+
+
+### Check the convergence
 
 ```{r}
 mssm_fit <- as_cmdstan_fit(list.files(output_dir, full.names = TRUE))
@@ -288,7 +293,57 @@ mssm_fit$draws(variables = "rel_B", format = "df") %>%
 
 
 
-## Results
+
+
+
+
+## Change prior
+
+### Differents models
+
+
+
+```{cmdstan}
+ for (n in 1:N) {
+    mu[n] ~ multi_normal(gamma_mu, Psi_mu);
+    to_vector(Phi[n]) ~ multi_normal(gamma_Phi, Psi_Phi);
+    
+    // tau_R[n] ~ inv_gamma(alpha_tau_R, beta_tau_R);
+    // tau_Q[n] ~ inv_gamma(alpha_tau_Q, beta_tau_Q);
+    
+    tau_R[n] ~ cauchy(0, 2.5);
+    tau_Q[n] ~ cauchy(0, 2.5);
+    // L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
+    // L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
+    L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
+    L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
+  }
+```
+
+
+
+```{r}
+mssm <- cmdstan_model("stan/multilevel_multivariate_ssm_s2019.stan")
+
+mssm_data <- lst(N = gen_data$N,
+                 `T` = gen_data$nT,
+                 y = gen_data$y)
+
+output_dir <- "stan/results/s2019-fully_w4s4_s1294"
+dir.create(output_dir)
+
+mssm_fit <- mssm$sample(data = mssm_data, 
+                        chains = 6, 
+                        parallel_chains = 6, 
+                        iter_warmup = 4000, 
+                        iter_sampling = 4000, 
+                        seed = 1294, 
+                        refresh = 2000, 
+                        show_messages = TRUE, 
+                        output_dir = output_dir)
+```
+
+### Results
 
 Plot
 
@@ -305,6 +360,7 @@ ppc_intervals(y = gen_data$Phi |> list_transpose() |> list_c(),
 
 ```
 
+## Plots
 
 ```{r}
 ppc_intervalsy = gen_data$rel_W |> list_transpose() |> list_c(),
@@ -351,52 +407,23 @@ Coverage
 
 
 
-# Simulation procedure
-
-Giva a 
-
-## Differents models
-
-```{cmdstan}
-
-```
-
-```{cmdstan}
- for (n in 1:N) {
-    mu[n] ~ multi_normal(gamma_mu, Psi_mu);
-    to_vector(Phi[n]) ~ multi_normal(gamma_Phi, Psi_Phi);
-    
-    // tau_R[n] ~ inv_gamma(alpha_tau_R, beta_tau_R);
-    // tau_Q[n] ~ inv_gamma(alpha_tau_Q, beta_tau_Q);
-    
-    tau_R[n] ~ cauchy(0, 2.5);
-    tau_Q[n] ~ cauchy(0, 2.5);
-    // L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
-    // L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
-    L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
-    L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
-  }
-```
-
-
-## Overall results
-
+## Dynamic linear model
 
 ```{r}
-mssm <- cmdstan_model("stan/multilevel_multivariate_ssm_lkj.stan")
+dlm_lkj <- cmdstan_model("stan/multilevel_multivariate_dlm_lkj.stan")
 
 mssm_data <- lst(N = gen_data$N,
                  `T` = gen_data$nT,
                  y = gen_data$y)
 
-output_dir <- "stan/results/s2019-fully_w4s4_s1294"
+output_dir <- "stan/results/dlm_w1s1_s1294"
 dir.create(output_dir)
 
-mssm_fit <- mssm$sample(data = mssm_data, 
+dlm_lkj_fit <- dlm_lkj$sample(data = mssm_data, 
                         chains = 6, 
                         parallel_chains = 6, 
-                        iter_warmup = 4000, 
-                        iter_sampling = 4000, 
+                        iter_warmup = 1000, 
+                        iter_sampling = 1000, 
                         seed = 1294, 
                         refresh = 2000, 
                         show_messages = TRUE, 
