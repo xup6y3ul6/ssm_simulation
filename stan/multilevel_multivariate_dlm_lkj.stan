@@ -44,7 +44,6 @@ transformed parameters {
   array[N] matrix[2, 2] L_Sigma_Q;
   array[N] matrix[2, 2] R;
   array[N] matrix[2, 2] Q;
-  vector[2] mu_R;
    
   for (n in 1:N) {
     L_Sigma_R[n] = diag_pre_multiply(tau_R[n], L_Omega_R[n]);
