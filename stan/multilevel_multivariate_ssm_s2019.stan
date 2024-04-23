@@ -18,11 +18,10 @@ parameters {
   array[N] vector[2] mu; // ground mean/trane
   array[N] vector[2] theta_0; // initial latent state
   array[N] matrix[2, T] theta; // latent states
-  array[N] matrix<lower=-1, upper=1>[2, 2] Phi; // autoregressive parameters
+  array[N] matrix[2, 2] Phi; // autoregressive parameters
   
-  
-  vector[N] epsilon;
-  vector[N] omega;
+  vector<lower=0>[N] sigma2_epsilon;
+  vector<lower=0>[N] sigma2_omega;
   array[N] vector<lower=0>[4] ervar; 
   
   vector[2] gamma_mu; // prior mean of the ground mean
@@ -30,8 +29,10 @@ parameters {
   vector[4] gamma_Phi; // prior mean of the autoregressive parameters
   cov_matrix[4] Psi_Phi; // prior covariance of the autoregressive parameters
   
-  vector<lower=0>[N] sigma_epsilon;
-  vector<lower=0>[N] sigma_omega;
+  real gamma_log_sigma2_epsilon;
+  real<lower=0> psi_log_sigma2_epsilon;
+  real gamama_log_sigma2_omega;
+  real<lower=0> psi_log_sigma2_omega;
   vector[4] gamma_log_ervar; 
   vector<lower=0>[4] psi_log_ervar;
 }
@@ -41,17 +42,15 @@ transformed parameters {
   array[N] cov_matrix[2] Q;
   
   for (n in 1:N) {
-    R[n, 1, 1] = sigma_epsilon[n]^2 + ervar[n, 1];
-    R[n, 1, 2] = sigma_epsilon[n]^2;
-    R[n, 2, 1] = sigma_epsilon[n]^2;
-    R[n, 2, 2] = sigma_epsilon[n]^2 + ervar[n, 2];
-    Q[n, 1, 1] = sigma_omega[n]^2 + ervar[n, 3];
-    Q[n, 1, 2] = sigma_omega[n]^2;
-    Q[n, 2, 1] = sigma_omega[n]^2;
-    Q[n, 2, 2] = sigma_omega[n]^2 + ervar[n, 4];
+    R[n, 1, 1] = sigma2_epsilon[n] + ervar[n, 1];
+    R[n, 1, 2] = sigma2_epsilon[n];
+    R[n, 2, 1] = sigma2_epsilon[n];
+    R[n, 2, 2] = sigma2_epsilon[n] + ervar[n, 2];
+    Q[n, 1, 1] = sigma2_omega[n] + ervar[n, 3];
+    Q[n, 1, 2] = sigma2_omega[n];
+    Q[n, 2, 1] = sigma2_omega[n];
+    Q[n, 2, 2] = sigma2_omega[n] + ervar[n, 4];
   }
-
-  
 }
 
 model {
@@ -76,12 +75,11 @@ model {
   for (n in 1:N) {
     mu[n] ~ multi_normal(gamma_mu, Psi_mu);
     to_vector(Phi[n]) ~ multi_normal(gamma_Phi, Psi_Phi);
-    //log(ervar[n]) ~ normal(gamma_log_ervar, psi_log_ervar);
     ervar[n] ~ lognormal(gamma_log_ervar, psi_log_ervar);
   }
   
-  epsilon ~ normal(0, sigma_epsilon);
-  omega ~ normal(0, sigma_omega);
+  sigma2_epsilon ~ lognormal(gamma_log_sigma2_epsilon, psi_log_sigma2_epsilon);
+  sigma2_omega ~ lognormal(gamama_log_sigma2_omega, psi_log_sigma2_omega);
   
   
   // the (hyper)priors of parameters are set as the Stan default values
@@ -101,17 +99,19 @@ generated quantities {
     }
 
     // within-subject reliability
-    Tau[n] = to_matrix((identity_matrix(2 * 2) - kronecker_prod(Phi[n], Phi[n])) \ to_vector(Q[n]), 2, 2);
+    Tau[n] = to_matrix((identity_matrix(2 * 2) - kronecker_prod(Phi[n], Phi[n])) \ to_vector(Q[n]), 
+                       2, 2);
 
     for (p in 1:2) {
       rel_W[n, p] = Tau[n, p, p] / (Tau[n, p, p] + R[n, p, p]);
-      
     }
   }
 
   // between-subject reliability
   for (p in 1:2) {
-    mu_R[p] = exp(gamma_log_ervar[p] + 0.5 * psi_log_ervar[p]^2);
+    mu_R[p] = exp(gamma_log_sigma2_epsilon + 0.5 * psi_log_sigma2_epsilon^2) + 
+      exp(gamma_log_ervar[p] + 0.5 * psi_log_ervar[p]^2);
+    
     rel_B[p] = Psi_mu[p, p] / (Psi_mu[p, p] + mean(Tau[, p, p]) + mu_R[p]);
   }
 }
