@@ -172,9 +172,9 @@ First of all, I used the same model that generated the data to fit the data. The
 
 ## Stan codes
 
-``` {.cmdstan filename="multilevel-univariate-ssm-lkj.stan"}
+``` {.cmdstan filename="multilevel_univariate_ssm_lkj.stan"}
 
-{{< include stan/multilevel-univariate-ssm-lkj.stan >}}
+{{< include stan/multilevel_univariate_ssm_lkj.stan >}}
 ```
 
 ### Fit the model
@@ -225,7 +225,7 @@ saveRDS(lkj_sum, str_c(output_dir,"/summary.RDS"))
 #| label: ssm-lkj-sum
 
 lkj_sum <- readRDS("stan/results/ssm_lkj_N25T50_W4000S4000_S1294/summary.RDS")
-skimr::skim(lkj_sum$rhat)
+skimr::skim(lkj_sum |> select(rhat:ess_tail))
 # View(lkj_sum)
 ```
 
@@ -237,6 +237,23 @@ The following, I used the model used by @schuurman2019 to fit the data.
 
 {{< include stan/multilevel_multivariate_ssm_s2019.stan >}}
 ```
+
+
+As for the setting of the covariance matrix of the measurement errors/innovations:
+
+
+::: {#fig-schuurman2019-Mplus-setting layout-ncol=3}
+![](figures/schuurman2019_Mplus_setting1.png)
+
+![](figures/schuurman2019_Mplus_setting2.png)
+
+![](figures/schuurman2019_Mplus_setting3.png)
+
+Mplus setting for the covariance matrix of the measurement errors/innovations in @schuurman2019
+:::
+
+
+
 
 ### Fit the model
 
@@ -274,8 +291,11 @@ saveRDS(mssm_fit$summary(), str_c(output_dir,"/summary.RDS"))
 output_dir <- "stan/results/ssm_s2019_N25T50_W4000S4000_S1295"
 mssm_fit <- as_cmdstan_fit(list.files(output_dir, "*.csv", full.names = TRUE))
 mssm_sum <- readRDS(str_c(output_dir,"/summary.RDS"))
-skimr::skim(mssm_sum$rhat)
+skimr::skim(mssm_sum |> select(rhat:ess_tail))
 # View(mssm_sum)
+```
+```{r}
+mssm_fit$diagnostic_summary()
 ```
 
 ```{r}
@@ -391,10 +411,9 @@ No state sampling with MCMC
 
 The code for Stan is as follows.
 
-``` cmdstan
-#| filename: "multilevel-univariate-dlm-lkj.stan"
+``` {.cmdstan filename="multilevel_univariate_dlm_lkj.stan"}
 
-{{< include stan/multilevel-univariate-dlm-lkj.stan >}}
+{{< include stan/multilevel_univariate_dlm_lkj.stan >}}
 ```
 
 ```{r}
@@ -429,7 +448,7 @@ saveRDS(dlm_lkj_fit$summary(), str_c(output_dir,"/summary.RDS"))
 output_dir <- "stan/results/dlm_w1s1_s1294"
 dlm_lkj_fit <- as_cmdstan_fit(list.files(output_dir, "*.csv", full.names = TRUE))
 dlm_lkj_sum <- readRDS(str_c(output_dir, "/summary.RDS"))
-skimr::skim(dlm_lkj_sum$rhat)
+skimr::skim(dlm_lkj_sum |> select(rhat:ess_tail))
 ```
 
 ```{r}

@@ -69,7 +69,7 @@ model {
   }
   
   sigma2_epsilon ~ lognormal(gamma_log_sigma2_epsilon, psi_log_sigma2_epsilon);
-  sigma2_omega ~ lognormal(gamama_log_sigma2_omega, psi_log_sigma2_omega);
+  sigma2_omega ~ lognormal(gamama_log_sigma2_omega, psi_log_sigma2_omeg |> a);
   
   
   // the (hyper)priors of parameters are set as the Stan default values
