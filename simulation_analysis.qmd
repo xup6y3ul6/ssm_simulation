@@ -16,7 +16,6 @@ format:
     code-tools: true
 ---
 
-
 # Simulated data
 
 ## Multilevel Measurement Error Vector Autoregressive (1) Model
@@ -25,7 +24,6 @@ According to @schuurman2019, the **multilevel MEVAR(1) model** can be written as
 
 -   Level 1 model (within subject)
     -   Observation equation
--   Measurement equation
 
 $$
 \begin{pmatrix}y_{1it} \\ y_{2it}\end{pmatrix} = \begin{pmatrix}\mu_{1i} \\ \mu_{2i}\end{pmatrix} + \begin{pmatrix}\theta_{1it} \\ \theta_{2it}\end{pmatrix} + \begin{pmatrix}\epsilon_{1it} \\ \epsilon_{2it}\end{pmatrix}
@@ -58,7 +56,6 @@ $$
 $$
 \begin{align*}
 \mathbf{\Sigma}_{\epsilon i}  &= \begin{pmatrix} \sigma^2_{\epsilon 11i} & \sigma_{\epsilon 12i} \\ \sigma_{\epsilon 12i} & \sigma^2_{\epsilon 22i}\end{pmatrix} = \begin{pmatrix}\tau_{\epsilon 1i} \\ \tau_{\epsilon 2i} \end{pmatrix} \begin{pmatrix} 1 & \psi_{\sigma_{\epsilon 12i}} \\ \psi_{\sigma_{\epsilon 12i}} & 1\end{pmatrix}  \begin{pmatrix}\tau_{\epsilon 1i} \\ \tau_{\epsilon 2i} \end{pmatrix}^\top = \boldsymbol{\tau}_{\epsilon i} \mathbf{C}_{\epsilon i} \boldsymbol{\tau}_{\epsilon i}^\top \\
-
 \boldsymbol{\tau}_{\epsilon i} &\sim logNormal\left(\boldsymbol{\gamma_{\epsilon}} = \begin{pmatrix}\gamma_{\epsilon 1} \\ \gamma_{\epsilon 2}\end{pmatrix}, \boldsymbol{\Phi_\epsilon} = \begin{pmatrix} \psi_{\epsilon 1}^2 & 0 \\ 0 & \psi_{\epsilon 2}^2\end{pmatrix}\right) \\
 \mathbf{C}_{\epsilon i} &\sim LKJ(\eta_\epsilon) 
 \end{align*}
@@ -67,14 +64,10 @@ $$
 $$
 \begin{align*}
 \mathbf{\Sigma}_{\omega i}  &= \begin{pmatrix} \sigma^2_{\omega 11i} & \sigma_{\omega 12i} \\ \sigma_{\omega 12i} & \sigma^2_{\omega 22i}\end{pmatrix} = \begin{pmatrix}\tau_{\omega 1i} \\ \tau_{\omega 2i} \end{pmatrix} \begin{pmatrix} 1 & \psi_{\sigma_{\epsilon 12i}} \\ \psi_{\sigma_{\epsilon 12i}} & 1\end{pmatrix}  \begin{pmatrix}\tau_{\omega 1i} \\ \tau_{\omega 2i} \end{pmatrix}^\top = \boldsymbol{\tau}_{\omega i} \mathbf{C}_{\omega i} \boldsymbol{\tau}_{\omega i}^\top \\
-
 \boldsymbol{\tau}_{\omega i} &\sim logNormal\left(\boldsymbol{\gamma_{\omega}} = \begin{pmatrix}\gamma_{\omega 1} \\ \gamma_{\omega 2}\end{pmatrix}, \boldsymbol{\Phi_\omega} = \begin{pmatrix} \psi_{\omega 1}^2 & 0 \\ 0 & \psi_{\omega 2}^2\end{pmatrix}\right) \\
 \mathbf{C}_{\omega i} &\sim LKJ(\eta_\omega) 
 \end{align*}
 $$
-
-
-
 
 ## Reliability
 
@@ -84,17 +77,15 @@ $$
 R^B_p = \frac{\psi^2_{\mu p}}{Var(y_p)} = \frac{\psi^2_{\mu p}}{\psi^2_{\mu p} + E_{i}[\tau_{p i}]+ E[\sigma_{\epsilon pp i}^2]} 
 $$
 
-where $p = 1, 2$. Since $\tau_{\epsilon pi} \sim logNotmal(\tau_{\epsilon p}, \psi_{\epsilon p}^2)$, 
-$\sigma_{\epsilon ppi}^2 = \tau_{\epsilon pi}^2 \sim \sim logNotmal(2\tau_{\epsilon p}, 4\psi_{\epsilon p}^2)$. Therefore, $E[\sigma_{\epsilon pp i}^2] = e^{2\tau_{\epsilon p} + 4\psi_{\epsilon p}^2 / 2}$
+where $p = 1, 2$. Since $\tau_{\epsilon pi} \sim logNotmal(\tau_{\epsilon p}, \psi_{\epsilon p}^2)$, $\sigma_{\epsilon ppi}^2 = \tau_{\epsilon pi}^2 \sim \sim logNotmal(2\tau_{\epsilon p}, 4\psi_{\epsilon p}^2)$. Therefore, $E[\sigma_{\epsilon pp i}^2] = e^{2\tau_{\epsilon p} + 4\psi_{\epsilon p}^2 / 2}$
 
 -   **Reliability for within-subject fluctuations**
 
 $$
 R_{pi}^W = \frac{\tau_{pi}}{Var(y_{i})} = \frac{\tau_{pi}}{\tau_{pi} + \sigma_{\epsilon ppi}^2}
-$$ 
+$$
 
 where $\tau_i = \frac{\sigma_{\omega i}^2}{1 - \phi_i^2}$.
-
 
 ## Data generating function and (hyper-)parameter settings
 
@@ -112,16 +103,11 @@ where $\tau_i = \frac{\sigma_{\omega i}^2}{1 - \phi_i^2}$.
 library(tidyverse)
 theme_set(theme_bw())
 
-source("data_generation.R")
-gen_data2 <- generate_ssm_data(N = 25, nT = 50, seed = 1294)
-saveRDS(gen_data, "sim_data/data_N25T50S1294.rds")
+# source("data_generation.R")
+# gen_data <- generate_ssm_data(N = 25, nT = 50, seed = 1294)
+# saveRDS(gen_data, "sim_data/data_N25T50S1294.rds")
+gen_data <- readRDS("sim_data/data_N25T50S1294.rds")
 ```
-
-
-```{r}
-gen_data$Phi[[21]]
-```
-
 
 ```{r}
 #| label: fig-ts-plot
@@ -142,7 +128,6 @@ plot_data |>
   facet_wrap(Sub ~ ., scales = "free_y", nrow = 5)
 ```
 
-
 ```{r}
 #| label: fig-ts-plot-all
 #| fig-cap: "The time plot of observed scores for all subjects together"
@@ -155,11 +140,7 @@ plot_data |>
 
 ## Reliability
 
-Between-level reliability
-
-$$
-
-$$
+-   Between-level reliability
 
 ```{r}
 #| label: rel-B
@@ -167,11 +148,7 @@ $$
 gen_data$rel_B
 ```
 
-Within -level reliability
-
-$$
-
-$$
+-   Within -level reliability
 
 ```{r}
 #| label: fig-rel-W
@@ -189,19 +166,18 @@ plot_rel_W |>
   facet_grid(. ~ Var)
 ```
 
-
 # Model fitting by Stan
+
+First of all, I used the same model that generated the data to fit the data. The Stan code is as follows.
 
 ## Stan codes
 
-```cmdstan
-#| filename: "multilevel-univariate-ssm-lkj.stan"
+``` {.cmdstan filename="multilevel_univariate_ssm_lkj.stan"}
 
-{{< include stan/multilevel-univariate-ssm-lkj.stan >}}
+{{< include stan/multilevel_univariate_ssm_lkj.stan >}}
 ```
 
-
-## Fitting the model
+### Fit the model
 
 ```{r}
 #| label: load-packages-and-source-cunstom-function
@@ -217,7 +193,7 @@ pos_neg_color <- scales::hue_pal()(2)
 ```
 
 ```{r}
-#| label: fit-model
+#| label: ssm-lkj-fit
 #| eval: false
 
 lkj <- cmdstan_model("stan/multilevel_multivariate_ssm_lkj.stan")
@@ -226,7 +202,7 @@ mssm_data <- lst(N = gen_data$N,
                  `T` = gen_data$nT,
                  y = gen_data$y)
 
-output_dir <- "stan/results/lkj-fully_w4s4_s1294"
+output_dir <- "stan/results/ssm_lkj_N25T50_W4000S4000_S1294"
 dir.create(output_dir)
 
 lkj_fit <- lkj$sample(data = mssm_data, 
@@ -238,66 +214,124 @@ lkj_fit <- lkj$sample(data = mssm_data,
                         refresh = 2000, 
                         show_messages = TRUE, 
                         output_dir = output_dir)
+lkj_fit <- as_cmdstan_fit(list.files(output_dir, full.names = TRUE))
+lkj_sum <- lkj_fit$summary()
+saveRDS(lkj_sum, str_c(output_dir,"/summary.RDS"))
 ```
 
-All 6 chains finished successfully.
-Mean chain execution time: 2044.2 seconds.
-Total execution time: 2764.5 seconds.
-
-Warning: 5099 of 24000 (21.0%) transitions ended with a divergence.
-See https://mc-stan.org/misc/warnings for details.
-
-Warning: 1241 of 24000 (5.0%) transitions hit the maximum treedepth limit of 10.
-See https://mc-stan.org/misc/warnings for details.
-
-Warning: 1 of 6 chains had an E-BFMI less than 0.2.
-See https://mc-stan.org/misc/warnings for details.
-
-
-## Check the convergence
+### Check the convergence
 
 ```{r}
-mssm_fit <- as_cmdstan_fit(list.files(output_dir, full.names = TRUE))
-mssm_sum <- mssm_fit$summary()
-View(mssm_sum)
+#| label: ssm-lkj-sum
+
+lkj_sum <- readRDS("stan/results/ssm_lkj_N25T50_W4000S4000_S1294/summary.RDS")
+skimr::skim(lkj_sum |> select(rhat:ess_tail))
+# View(lkj_sum)
+```
+
+## Change to another model
+
+The following, I used the model used by @schuurman2019 to fit the data.
+
+``` {.cmdstan filename="multilevel_multivariate_ssm_s2019.stan"}
+
+{{< include stan/multilevel_multivariate_ssm_s2019.stan >}}
 ```
 
 
+As for the setting of the covariance matrix of the measurement errors/innovations:
+
+
+::: {#fig-schuurman2019-Mplus-setting layout-ncol=3}
+![](figures/schuurman2019_Mplus_setting1.png)
+
+![](figures/schuurman2019_Mplus_setting2.png)
+
+![](figures/schuurman2019_Mplus_setting3.png)
+
+Mplus setting for the covariance matrix of the measurement errors/innovations in @schuurman2019
+:::
+
+
+
+
+### Fit the model
+
 ```{r}
+#| label: ssm-s2019-fit
+#| eval: false
+
+mssm <- cmdstan_model("stan/multilevel_multivariate_ssm_s2019.stan")
+
+mssm_data <- lst(N = gen_data$N,
+                 `T` = gen_data$nT,
+                 y = gen_data$y)
+
+output_dir <- "stan/results/ssm_s2019_N25T50_W4000S4000_S1295"
+dir.create(output_dir)
+
+mssm_fit <- mssm$sample(data = mssm_data, 
+                        chains = 6, 
+                        parallel_chains = 6, 
+                        iter_warmup = 4000, 
+                        iter_sampling = 4000, 
+                        seed = 1295, 
+                        refresh = 2000, 
+                        show_messages = TRUE, 
+                        output_dir = output_dir)
+
+saveRDS(mssm_fit$summary(), str_c(output_dir,"/summary.RDS"))
+```
+
+### Check the convergence
+
+```{r}
+#| label: ssm-s2019-sum
+
+output_dir <- "stan/results/ssm_s2019_N25T50_W4000S4000_S1295"
+mssm_fit <- as_cmdstan_fit(list.files(output_dir, "*.csv", full.names = TRUE))
+mssm_sum <- readRDS(str_c(output_dir,"/summary.RDS"))
+skimr::skim(mssm_sum |> select(rhat:ess_tail))
+# View(mssm_sum)
+```
+```{r}
+mssm_fit$diagnostic_summary()
+```
+
+```{r}
+#| label: ssm-s2019-trace
+
 mssm_fit$draws(variables = "mu", format = "df") %>% 
   select(1:12, .chain, .iteration, .draw) %>% 
   mcmc_trace()
 mssm_fit$draws(variables = "Phi", format = "df") %>% 
-  select(1:12, .chain, .iteration, .draw) %>% 
+  select(kronecker(1:3, c(0, 25, 50, 75), "+"), 
+         .chain, .iteration, .draw) %>%
   mcmc_trace()
-mssm_fit$draws(variables = "Phi", format = "df") %>% 
-  select(13:24, .chain, .iteration, .draw) %>% 
+mssm_fit$draws(variables = c("R"), format = "df") %>% 
+  select(kronecker(c(5, 8, 11), c(0, 25, 50, 75), "+"), 
+         .chain, .iteration, .draw) %>%
+  mcmc_trace()
+mssm_fit$draws(variables = c("Q"), format = "df") %>% 
+  select(kronecker(c(15, 19, 23), c(0, 25, 50, 75), "+"), 
+         .chain, .iteration, .draw) %>%
   mcmc_trace()
 mssm_fit$draws(variables = "rel_W", format = "df") %>% 
-  select(1:12, .chain, .iteration, .draw) %>% 
+  select(13:24, .chain, .iteration, .draw) %>% 
   mcmc_trace()
 mssm_fit$draws(variables = "rel_B", format = "df") %>% 
   mcmc_trace()
 
-
-# mssm_fit$draws(variables = "sigma_omega", format = "df") %>% 
-#   mcmc_trace()
-# mssm_fit$draws(variables = "sigma_epsilon", format = "df") %>% 
-#   mcmc_trace()
 ```
 
-
-
-## Results
-
-Plot
+### Results
 
 ```{r}
 color_scheme_set("red")
 
 ppc_intervals(y = gen_data$mu |> list_transpose() |> list_c(),
               yrep = mssm_fit$draws(variables = "mu", format = "draws_matrix"))
-```   
+```
 
 ```{r}
 ppc_intervals(y = gen_data$Phi |> list_transpose() |> list_c(),
@@ -305,22 +339,26 @@ ppc_intervals(y = gen_data$Phi |> list_transpose() |> list_c(),
 
 ```
 
-
 ```{r}
-ppc_intervalsy = gen_data$rel_W |> list_transpose() |> list_c(),
-              yrep = mssm_fit$draws(variables = "rel_W", format = "draws_matrix"))
+ppc_intervals(y = gen_data$rel_W |> list_transpose() |> list_c(),
+              yrep = mssm_fit$draws(variables = "rel_W", 
+                                    format = "draws_matrix"))
 
 ```
 
 ```{r}
 ppc_intervals(y = gen_data$rel_B,
-              yrep = mssm_fit$draws(variables = "rel_B", format = "draws_matrix"))
-gen_data$rel_B
+              yrep = mssm_fit$draws(variables = "rel_B", 
+                                    format = "draws_matrix"))
 ```
 
-BIAS
+### Evaluation ... (Skip)
 
 ```{r}
+#| label: overall-bias
+#| include: false
+#| eval: false
+
 overall_bias <- function(true_value, mcmc_draws, estimate = c("mean", "median")) {
   estimate <- match.arg(estimate)
   
@@ -343,63 +381,84 @@ mssm_fit$draws(variables = "rel_W", format = "draws_matrix")
 
 ```
 
+## Dynamic linear model
 
-RMSE
+::: {#fig-ssm}
+![Stan code](figures/ssm_stan_example_code){#fig-ssm-code}
 
-Coverage
+![MCMC summary](figures/ssm_stan_example_summary){#fig-ssm-summary}
 
+![Trace plots](figures/ssm_stan_example_traceplot){#fig-ssm-traceplot}
 
+Deterioration of the convergence
+:::
 
+@hagiwara2021 proposes that sample only parameters using MCMC and then reproduce the state samples more efficient using *forward filtering backward sampling* (FFBS). As the name suggests, this method performs Kalman filtering once in the time forward direction and then draws a sample based on Kalman smoothing in the time reverse direction. It is sometimes referred to as simulation smoothing because it corresponds to a simulation version of Kalman smoothing.
 
-# Simulation procedure
+> `Stan` prepares a function `gaussian_dlm_obs()` to calculate the likelihood of the linear Gaussian state-space model. This function was implemented as Dr. Jeffrey B. Arnold’s contribution and executes Kalman filtering internally. This function in the Stan 2.19.2 does not yet support time-varying models and missing observations.
 
-Giva a 
+> Note that the library `dlm` provides the function `dlmBSample()` to execute FFBS. This function calculates Kalman smoothing internally.
 
-## Differents models
+::: {#fig-dlm}
+![Stan code](figures/dlm_stan_example_code){#fig-dlm-code}
 
-```{cmdstan}
+![MCMC summary](figures/dlm_stan_example_summary){#fig-dlm-summary}
 
+![Trace plots](figures/dlm_stan_example_traceplot){#fig-dlm-traceplot}
+
+No state sampling with MCMC
+:::
+
+The code for Stan is as follows.
+
+``` {.cmdstan filename="multilevel_univariate_dlm_lkj.stan"}
+
+{{< include stan/multilevel_univariate_dlm_lkj.stan >}}
 ```
-
-```{cmdstan}
- for (n in 1:N) {
-    mu[n] ~ multi_normal(gamma_mu, Psi_mu);
-    to_vector(Phi[n]) ~ multi_normal(gamma_Phi, Psi_Phi);
-    
-    // tau_R[n] ~ inv_gamma(alpha_tau_R, beta_tau_R);
-    // tau_Q[n] ~ inv_gamma(alpha_tau_Q, beta_tau_Q);
-    
-    tau_R[n] ~ cauchy(0, 2.5);
-    tau_Q[n] ~ cauchy(0, 2.5);
-    // L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
-    // L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
-    L_Omega_R[n] ~ lkj_corr_cholesky(eta_R);
-    L_Omega_Q[n] ~ lkj_corr_cholesky(eta_Q);
-  }
-```
-
-
-## Overall results
-
 
 ```{r}
-mssm <- cmdstan_model("stan/multilevel_multivariate_ssm_lkj.stan")
+#| label: dlm-lkj-fit
+#| eval: false
+
+dlm_lkj <- cmdstan_model("stan/multilevel_multivariate_dlm_lkj.stan")
 
 mssm_data <- lst(N = gen_data$N,
                  `T` = gen_data$nT,
                  y = gen_data$y)
 
-output_dir <- "stan/results/s2019-fully_w4s4_s1294"
+output_dir <- "stan/results/dlm_w1s1_s1294"
 dir.create(output_dir)
 
-mssm_fit <- mssm$sample(data = mssm_data, 
+dlm_lkj_fit <- dlm_lkj$sample(data = mssm_data, 
                         chains = 6, 
                         parallel_chains = 6, 
-                        iter_warmup = 4000, 
-                        iter_sampling = 4000, 
+                        iter_warmup = 1000, 
+                        iter_sampling = 1000, 
                         seed = 1294, 
                         refresh = 2000, 
                         show_messages = TRUE, 
                         output_dir = output_dir)
+
+saveRDS(dlm_lkj_fit$summary(), str_c(output_dir,"/summary.RDS"))
 ```
 
+```{r}
+#| label: dlm-lkj-sum
+
+output_dir <- "stan/results/dlm_w1s1_s1294"
+dlm_lkj_fit <- as_cmdstan_fit(list.files(output_dir, "*.csv", full.names = TRUE))
+dlm_lkj_sum <- readRDS(str_c(output_dir, "/summary.RDS"))
+skimr::skim(dlm_lkj_sum |> select(rhat:ess_tail))
+```
+
+```{r}
+#| label: dlm-lkj-trace
+
+dlm_lkj_fit$draws(variables = c("Phi"), format = "df") %>% 
+  select(kronecker(1:3, c(0, 25, 50, 75), "+"), 
+         .chain, .iteration, .draw) %>%
+  mcmc_trace()
+
+dlm_lkj_fit$draws(variables = c("diag_Psi_tau_R", "diag_Psi_tau_Q"), format = "df") %>% 
+  mcmc_trace()
+```
